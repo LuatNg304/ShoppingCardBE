@@ -2,6 +2,7 @@ import { Collection, Db, MongoClient } from 'mongodb'
 //
 import dotenv from 'dotenv'
 import User from '~/models/schemas/User.schema'
+import RefreshToken from '~/models/schemas/RefreshToken.schema'
 dotenv.config() //ket noi voi file .env
 //can thoat ra tai trong terminal: npm i dotenv
 const url = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@shoppingcardprojectclus.nyxnp.mongodb.net/?retryWrites=true&w=majority&appName=shoppingCardProjectCluster`
@@ -30,6 +31,9 @@ class DatabseService {
   get users(): Collection<User> {
     //dinh nghia lai, nho co scheme nhan vao la user
     return this.db.collection(process.env.DB_USERS_COLLECTION as string)
+  }
+  get refresh_tokens(): Collection<RefreshToken> {
+    return this.db.collection(process.env.DB_REFRESH_TOKENS_COLLECTION as string)
   }
 }
 
