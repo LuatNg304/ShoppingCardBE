@@ -33,11 +33,8 @@ export const verifyToken = ({
 }) => {
   return new Promise<TokenPayload>((resolve, reject) => {
     jwt.verify(token, privateKey, (error, decode) => {
-      if (error) {
-        throw reject(error)
-      } else {
-        return resolve(decode as TokenPayload)
-      }
+      if (error) throw reject(error)
+      else return resolve(decode as TokenPayload)
     })
   })
 }

@@ -10,7 +10,7 @@ export enum USER_ROLE {
 }
 export enum TokenType {
   AccessToken,
-  RefeshToken,
+  RefreshToken,
   ForgotPasswordToken,
   EmailVerificationToken
 }
