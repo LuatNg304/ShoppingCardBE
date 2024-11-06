@@ -210,12 +210,12 @@ export const refreshTokenValidator = validate(
           options: async (value, { req }) => {
             //value nay la refresh token
             try {
-              const decode_refresh_token = verifyToken({
+              const decode_refresh_token = await verifyToken({
                 token: value,
                 privateKey: process.env.JWT_SERECT_REFRESH_TOKEN as string
               })
-              //;(req as Request).decode_refresh_token = decode_refresh_token, ///////////////////////////////////////////////////////////////////////////loi khuc nay nen coi lai
-              req.decode_refresh_token = decode_refresh_token
+              ;(req as Request).decode_refresh_token = decode_refresh_token ///////////////////////////////////////////////////////////////////////////loi khuc nay nen coi lai
+              //req.decode_refresh_token = decode_refresh_token
             } catch (error) {
               throw new ErrorWithStatus({
                 status: HTTP_STATUS.UNAUTHORIZED, //401
