@@ -1,9 +1,9 @@
 //import cac interface cua express
 import { error } from 'console'
 import { Request, Response, NextFunction } from 'express'
-import { check, checkSchema } from 'express-validator'
+import { check, checkExact, checkSchema } from 'express-validator'
 import { JsonWebTokenError } from 'jsonwebtoken'
-import { capitalize } from 'lodash'
+import { capitalize, values } from 'lodash'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
@@ -214,7 +214,7 @@ export const refreshTokenValidator = validate(
                 token: value,
                 privateKey: process.env.JWT_SERECT_REFRESH_TOKEN as string
               })
-              ;(req as Request).decode_refresh_token = decode_refresh_token ///////////////////////////////////////////////////////////////////////////loi khuc nay nen coi lai
+              ;(req as Request).decode_refresh_token = decode_refresh_token
               //req.decode_refresh_token = decode_refresh_token
             } catch (error) {
               throw new ErrorWithStatus({
@@ -225,6 +225,51 @@ export const refreshTokenValidator = validate(
             return true
           }
         }
+      }
+    },
+    ['body']
+  )
+)
+
+export const emailVerifyTokenValidator = validate(
+  checkSchema(
+    {
+      email_verify_token: {
+        trim: true,
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.EMAIL_VERIFY_TOKEN_IS_REQUIRED
+        },
+        custom: {
+          options: async (value: string, { req }) => {
+            try {
+              const decode_email_verify_token = await verifyToken({
+                token: value,
+                privateKey: process.env.JWT_SERECT_EMAIL_VERIFY_TOKEN as string
+              })
+              ;(req as Request).decode_email_verify_token = decode_email_verify_token
+            } catch (error) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.UNAUTHORIZED,
+                message: (error as JsonWebTokenError).message
+              })
+            }
+            return true //xac thuc thanh cong
+          }
+        }
+      }
+    },
+    ['query']
+  )
+)
+export const forgotPasswordValidator = validate(
+  checkSchema(
+    {
+      email: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.NAME_IS_REQUIRED
+        },
+        isEmail: true,
+        trim: true
       }
     },
     ['body']

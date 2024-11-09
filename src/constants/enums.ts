@@ -12,5 +12,5 @@ export enum TokenType {
   AccessToken,
   RefreshToken,
   ForgotPasswordToken,
-  EmailVerificationToken
+  EmailVerifycationToken
 }
