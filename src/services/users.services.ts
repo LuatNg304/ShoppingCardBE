@@ -1,4 +1,4 @@
-import { loginReqBody, RegisterReqbody } from '~/models/requests/users.requests'
+import { loginReqBody, RegisterReqbody, UpdateMeReqBody } from '~/models/requests/users.requests'
 import databseService from './database.services'
 import User from '~/models/schemas/User.schema'
 import { hashPassword } from '~/utils/crypto'
@@ -12,7 +12,7 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { DatabaseSync } from 'node:sqlite'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
-import { ObjectId } from 'mongodb'
+import { ObjectId, ReturnDocument } from 'mongodb'
 import { error } from 'console'
 import { JsonWebTokenError } from 'jsonwebtoken'
 import { update } from 'lodash'
@@ -91,6 +91,33 @@ class UsersServices {
       throw new ErrorWithStatus({
         status: HTTP_STATUS.NOT_FOUND, //404
         message: USERS_MESSAGES.USER_NOT_FOUND
+      })
+    }
+    return user
+  }
+  async checkPassworkToken({ user_id, forgot_password_token }: { user_id: string; forgot_password_token: string }) {
+    const user = await databseService.users.findOne({
+      _id: new ObjectId(user_id),
+      forgot_password_token
+    })
+    if (!user) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.UNAUTHORIZED,
+        message: USERS_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_INVALID
+      })
+    }
+    //neu co thi tra ra user cho ai can dung
+    return user
+  }
+  async checkEmailVerified(user_id: string) {
+    const user = await databseService.users.findOne({
+      _id: new ObjectId(user_id),
+      verify: UserVerifyStatus.Verified
+    })
+    if (!user) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.FORBBIDEN,
+        message: USERS_MESSAGES.USER_NOT_VERIFIED
       })
     }
     return user
@@ -221,7 +248,7 @@ class UsersServices {
         {
           $set: {
             forgot_password_token,
-            update_at: '$$NOW'
+            updated_at: '$$NOW'
           }
         }
       ])
@@ -232,7 +259,72 @@ class UsersServices {
       `)
     }
   }
+  async resetPassword({ user_id, password }: { user_id: string; password: string }) {
+    await databseService.users.updateOne(
+      { _id: new ObjectId(user_id) }, //
+      [
+        {
+          $set: {
+            password: hashPassword(password),
+            forgot_password_token: '',
+            updated_at: '$$NOW'
+          }
+        }
+      ]
+    )
+  }
+  async getMe(user_id: string) {
+    const userInfor = await databseService.users.findOne(
+      { _id: new ObjectId(user_id) },
+      {
+        //projection: anh' xa
+        projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } //chon ra nhung thang khong gui ra ngoai,
+        //1 la gui, 0 la an, cung co the chi chon 1 loai de ghi
+      }
+    )
+    return userInfor
+  }
+  async updateMe({ user_id, payload }: { user_id: string; payload: UpdateMeReqBody }) {
+    //payload la nhung gi ma nguoi dung rat muon update
+    //nhung trong payload nay co hai van de
+    //1 date_of_birth la string muon chuyen ve date
+    const _payload = payload.date_of_birth //
+      ? { ...payload, date_of_birth: new Date(payload.date_of_birth) }
+      : payload
+    //2 neu nguoi dung update username thi no nen la unique
+    if (_payload) {
+      const user = await databseService.users.findOne({ username: payload.username })
+      if (user) {
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.UNPROCESSABLE_ENTITY,
+          message: USERS_MESSAGES.USERNAME_ALREADY_EXISTS
+        })
+      }
+    }
+    //vuot qua tho bat dau update
+    const userInfor = await databseService.users.findOneAndUpdate(
+      { _id: new ObjectId(user_id) }, //
+      [
+        {
+          $set: {
+            ..._payload,
+            updated_at: '$$NOW'
+          }
+        }
+      ],
+      {
+        returnDocument: 'after',
+        projection: {
+          password: 0,
+          email_verify_token: 0,
+          forgot_password_token: 0
+        }
+      }
+    )
+    return userInfor
+  }
 }
+
 //tao ra 1 instance
 const usersServices = new UsersServices()
 export default usersServices

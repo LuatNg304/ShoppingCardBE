@@ -3,8 +3,11 @@ import {
   loginReqBody,
   LogoutReqBody,
   RegisterReqbody,
+  ResetPasswordReqBody,
   TokenPayload,
-  verifyEmailReqQuery
+  UpdateMeReqBody,
+  verifyEmailReqQuery,
+  VerifyForgotPasswordTokenReqBody
 } from '~/models/requests/users.requests'
 import User from '~/models/schemas/User.schema'
 import usersServices from '~/services/users.services'
@@ -14,6 +17,7 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { result } from 'lodash'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { UserVerifyStatus } from '~/constants/enums'
+import { userInfo } from 'os'
 //controller la hnadle co nv tap ket du lieu nguou dung
 //va phan phat vao cac server dung cho
 
@@ -166,4 +170,66 @@ export const forgotPasswordController = async (
       message: USERS_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD
     })
   }
+}
+export const verifyForgotPasswordTokenController = async (
+  req: Request<ParamsDictionary, any, VerifyForgotPasswordTokenReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  //vao duoc day co nghia la forgot_password_token la hop le
+  const { forgot_password_token } = req.body
+  const { user_id } = req.decoded_forgot_password_token as TokenPayload
+  await usersServices.checkPassworkToken({ user_id, forgot_password_token })
+  //neu qua ham tren thi ok
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.VERIFY_FORGOT_PASSWORD_TOKEN_SUCCESS
+  })
+}
+export const resetPasswordController = async (
+  req: Request<ParamsDictionary, any, ResetPasswordReqBody>,
+  res: Response,
+  next: NextFunction
+) => {
+  //vao duoc day co nghia la forgot_password_token la hop le
+  const { forgot_password_token, password } = req.body
+  const { user_id } = req.decoded_forgot_password_token as TokenPayload
+  await usersServices.checkPassworkToken({ user_id, forgot_password_token })
+  //neu qua ham tren thi ok
+
+  await usersServices.resetPassword({ user_id, password })
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.VERIFY_FORGOT_PASSWORD_TOKEN_SUCCESS
+  })
+}
+
+export const getMeController = async (
+  req: Request<ParamsDictionary, any, any>, //
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const userInfor = await usersServices.getMe(user_id) // hàm này ta chưa code, nhưng nó dùng user_id tìm user và trả ra user đó
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.GET_ME_SUCCESS,
+    userInfor
+  })
+}
+export const updateMeController = async (
+  req: Request<ParamsDictionary, any, UpdateMeReqBody>, //
+  res: Response,
+  next: NextFunction
+) => {
+  //mguoi ta gui access_token len de chung minh la ho da dang nhap va dong thoi cho ta bt ho la ai thong qua cai payload do
+  const { user_id } = req.decode_authorization as TokenPayload
+  //req.body chua cac thuoc tinh ma nguoi dung cap nhat
+  const payload = req.body //payload la tat ca noi dung nguoi dung gui len
+  //ta muon acc phai verify thi moi duoc cap nhat
+  await usersServices.checkEmailVerified(user_id)
+  //neu goi ham tren ma kh co thi say ra thi user da verify roi
+  //minh tien hanh cap nhat thong tin ma nguoi dung cung cap
+  const userInfo = await usersServices.updateMe({ user_id, payload })
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.UPDATE_PROFILE_SUCCESS,
+    userInfo
+  })
 }

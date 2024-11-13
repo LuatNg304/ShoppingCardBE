@@ -2,19 +2,26 @@ import express, { Request, Response } from 'express'
 
 import {
   forgotPasswordController,
+  getMeController,
   loginController,
   logoutController,
   registerController,
   resendVerifyEmailController,
-  verifyEmailTokenController
+  resetPasswordController,
+  updateMeController,
+  verifyEmailTokenController,
+  verifyForgotPasswordTokenController
 } from '~/controllers/users.controllers'
 import {
   accessTokenValidator,
   emailVerifyTokenValidator,
+  forgotPasswordTokenValidator,
   forgotPasswordValidator,
   loginValidator,
   refreshTokenValidator,
-  registerValidator
+  registerValidator,
+  resetPasswordValidator,
+  updateMeValidator
 } from '~/middlewares/users.middlewares'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import { wraptAsync } from '~/utils/handlers'
@@ -80,7 +87,7 @@ userRouter.post(
   '/resend-verify-email',
   accessTokenValidator, //
   wraptAsync(resendVerifyEmailController)
-) //--------------------------------------------------------------------------chuaa test---------------------
+) //-----------------------------------------------------------------ngon---------------------
 
 /*Forgot password
 khi quen mk thi dung chuc nang nay
@@ -95,6 +102,62 @@ userRouter.post(
   forgotPasswordValidator,
   wraptAsync(forgotPasswordController)
 ) //----------------------------------------------------------------ngon---------------
-userRouter.post('/me')
+
+/*verify forgot password token
+  kt  xem fpt co con hieu luc hay khong
+  path: users/verify-forgot-passwork
+  method: post
+  body:{
+    forgot_password_token: string
+  }
+ */
+userRouter.post(
+  '/veridy-forgot-password',
+  forgotPasswordTokenValidator,
+  wraptAsync(verifyForgotPasswordTokenController)
+)
+
+/*reset password
+path: users/reset-password
+method :post
+bodyP{
+password: string,
+  confirm_password: string,
+  forgot_password_token: string
+}
+ */
+userRouter.post(
+  '/reset-password', //
+
+  forgotPasswordTokenValidator,
+  resetPasswordValidator, //kt pass, cf pass, fpt
+  wraptAsync(resetPasswordController)
+) //xu ly logic
+
+/*
+des: get profile của user
+path: '/me'
+method: post
+Header: {Authorization: Bearer <access_token>}
+body: {}
+*/
+userRouter.post('/me', accessTokenValidator, wraptAsync(getMeController))
+/*
+des: update profile của user
+path: '/me'
+method: patch
+Header: {Authorization: Bearer <access_token>}
+body: {
+  name?: string
+  date_of_birth?: Date
+  bio?: string // optional
+  location?: string // optional
+  website?: string // optional
+  username?: string // optional
+  avatar?: string // optional
+  cover_photo?: string // optional}
+*/
+userRouter.patch('/me', accessTokenValidator, updateMeValidator, wraptAsync(updateMeController))
 userRouter.post('/update')
+
 export default userRouter
