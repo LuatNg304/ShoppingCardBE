@@ -30,6 +30,7 @@ export const USERS_MESSAGES = {
   REGISTER_SUCCESS: ' Register success !',
   ACCESS_TOKEN_IS_REQUIRES: 'Access to ken is requires',
   REFRESH_TOKEN_IS_REQUIRES: 'Refresh token is requires',
+  REFRESH_TOKEN_SUCCESS: 'Refresh token success',
   LOGOUT_SUCCESS: 'Logout successfully',
   REFESH_TOKEN_INVALID: 'Refexh token invalid',
   EMAIL_VERIFY_TOKEN_IS_REQUIRED: 'Email verify token is required',
@@ -57,5 +58,7 @@ export const USERS_MESSAGES = {
   UPDATE_PROFILE_SUCCESS: 'Update profile success',
   USER_NOT_VERIFIED: 'User not verified',
   USERNAME_ALREADY_EXISTS: 'Username already exists',
-  USERNAME_IS_INVALID: 'Username is invalid'
+  USERNAME_IS_INVALID:
+    'Username must be a string and length must be 4 - 15, and contain only letters, numbers, and underscores, not only numbers',
+  CHANGE_PASSWORD_SUCCESS: 'Changing password successfully !!!!'
 } as const //để k ai chỉnh đc

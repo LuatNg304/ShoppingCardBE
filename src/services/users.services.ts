@@ -128,6 +128,7 @@ class UsersServices {
     const result = await databseService.users.insertOne(
       new User({
         _id: user_id,
+        username: `user${user_id.toString()}`,
         email_verify_token,
         ...payLoad,
         password: hashPassword(payLoad.password), //ghi de
@@ -322,6 +323,61 @@ class UsersServices {
       }
     )
     return userInfor
+  }
+  async changePassword({
+    user_id,
+    password,
+    old_password
+  }: {
+    user_id: string
+    password: string
+    old_password: string
+  }) {
+    //tìm user bằng username và old_password
+    const user = await databseService.users.findOne({
+      _id: new ObjectId(user_id),
+      password: hashPassword(old_password)
+    })
+    //nếu không có user thì throw error
+    if (!user) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.UNAUTHORIZED //401
+      })
+    }
+    //nếu có thì cập nhật lại password
+    //cập nhật lại password và forgot_password_token
+    //tất nhiên là lưu password đã hash rồi
+    databseService.users.updateOne({ _id: new ObjectId(user_id) }, [
+      {
+        $set: {
+          password: hashPassword(password),
+          forgot_password_token: '',
+          updated_at: '$$NOW'
+        }
+      }
+    ])
+  }
+  async refreshToken({ user_id, refresh_token }: { user_id: string; refresh_token: string }) {
+    //tạo mới
+    const [access_token, new_refresh_token] = await Promise.all([
+      this.signAccessToken(user_id),
+      this.signResfeshToken(user_id)
+    ])
+    //luu rf moi vao database
+    await databseService.refresh_tokens.insertOne(
+      new RefreshToken({
+        token: new_refresh_token,
+        user_id: new ObjectId(user_id)
+      })
+    )
+    //xoa rf token cuu de kh ai dung nua
+    await databseService.refresh_tokens.deleteOne({ token: refresh_token })
+    //gui cap cap ma moi cho nguoi dung
+    return {
+      access_token,
+      refresh_token: new_refresh_token
+    }
   }
 }
 

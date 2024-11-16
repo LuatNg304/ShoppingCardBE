@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from 'express'
 import {
+  ChangePasswordReqBody,
   loginReqBody,
   LogoutReqBody,
+  RefreshTokenReqBody,
   RegisterReqbody,
   ResetPasswordReqBody,
   TokenPayload,
@@ -231,5 +233,40 @@ export const updateMeController = async (
   res.status(HTTP_STATUS.OK).json({
     message: USERS_MESSAGES.UPDATE_PROFILE_SUCCESS,
     userInfo
+  })
+}
+export const changePasswordController = async (
+  req: Request<ParamsDictionary, any, ChangePasswordReqBody>, //
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const { password, old_password } = req.body
+  const result = await usersServices.changePassword({
+    user_id,
+    old_password,
+    password
+  })
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.CHANGE_PASSWORD_SUCCESS,
+    result
+  })
+} /////maybe bug here
+
+export const refreshTokenController = async (
+  req: Request<ParamsDictionary, any, RefreshTokenReqBody>, //
+  res: Response,
+  next: NextFunction
+) => {
+  const { user_id } = req.decode_refresh_token as TokenPayload //lấy refresh_token từ req.body
+  const { refresh_token } = req.body
+  const isRefreshTokenValid = await usersServices.checkRefreshLogout({
+    user_id,
+    refresh_token
+  })
+  const result = await usersServices.refreshToken({ user_id, refresh_token })
+  res.status(HTTP_STATUS.OK).json({
+    message: USERS_MESSAGES.REFRESH_TOKEN_SUCCESS,
+    result
   })
 }

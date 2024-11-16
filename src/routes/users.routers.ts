@@ -1,10 +1,12 @@
 import express, { Request, Response } from 'express'
 
 import {
+  changePasswordController,
   forgotPasswordController,
   getMeController,
   loginController,
   logoutController,
+  refreshTokenController,
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
@@ -12,8 +14,10 @@ import {
   verifyEmailTokenController,
   verifyForgotPasswordTokenController
 } from '~/controllers/users.controllers'
+import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidator,
+  changPasswordValidator,
   emailVerifyTokenValidator,
   forgotPasswordTokenValidator,
   forgotPasswordValidator,
@@ -23,9 +27,11 @@ import {
   resetPasswordValidator,
   updateMeValidator
 } from '~/middlewares/users.middlewares'
+import { UpdateMeReqBody } from '~/models/requests/users.requests'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import { wraptAsync } from '~/utils/handlers'
 const userRouter = express.Router()
+
 /*register
     Desc: Register a new user
     path:/register
@@ -40,7 +46,11 @@ const userRouter = express.Router()
     }
 */
 //throw khong the chay trong ham async, con next thi dung duoc o ham bth va ca hai
-userRouter.post('/register', registerValidator, wraptAsync(registerController))
+userRouter.post(
+  '/register', //
+  registerValidator,
+  wraptAsync(registerController)
+)
 /*login
 path: users/login
 method: post
@@ -50,7 +60,11 @@ body:{
 }
 */
 //handler
-userRouter.post('/login', loginValidator, wraptAsync(loginController))
+userRouter.post(
+  '/login', //
+  loginValidator,
+  wraptAsync(loginController)
+)
 /*desc: logout
 path: users/logout
 method: post
@@ -61,7 +75,12 @@ body:{
 
 }
 */
-userRouter.post('/logout', accessTokenValidator, refreshTokenValidator, wraptAsync(logoutController))
+userRouter.post(
+  '/logout', //
+  accessTokenValidator,
+  refreshTokenValidator,
+  wraptAsync(logoutController)
+)
 
 /*verify email
  khi nguoi dun nhan vao link dc guitrong mail cua ho
@@ -112,7 +131,7 @@ userRouter.post(
   }
  */
 userRouter.post(
-  '/veridy-forgot-password',
+  '/veridy-forgot-password', //
   forgotPasswordTokenValidator,
   wraptAsync(verifyForgotPasswordTokenController)
 )
@@ -128,22 +147,34 @@ password: string,
  */
 userRouter.post(
   '/reset-password', //
-
   forgotPasswordTokenValidator,
   resetPasswordValidator, //kt pass, cf pass, fpt
   wraptAsync(resetPasswordController)
 ) //xu ly logic
 
-/*
-des: get profile của user
+/*des: get profile của user
 path: '/me'
 method: post
 Header: {Authorization: Bearer <access_token>}
 body: {}
 */
-userRouter.post('/me', accessTokenValidator, wraptAsync(getMeController))
-/*
-des: update profile của user
+userRouter.post(
+  '/me',
+  //can 1 ham san loc req.body
+  filterMiddleware<UpdateMeReqBody>([
+    'name',
+    'date_of_birth',
+    'bio',
+    'location',
+    'website',
+    'avatar',
+    'username',
+    'cover_photo'
+  ]),
+  accessTokenValidator,
+  wraptAsync(getMeController)
+)
+/*des: update profile của user
 path: '/me'
 method: patch
 Header: {Authorization: Bearer <access_token>}
@@ -157,7 +188,40 @@ body: {
   avatar?: string // optional
   cover_photo?: string // optional}
 */
-userRouter.patch('/me', accessTokenValidator, updateMeValidator, wraptAsync(updateMeController))
-userRouter.post('/update')
+userRouter.patch(
+  '/me', //
+  accessTokenValidator,
+  updateMeValidator,
+  wraptAsync(updateMeController)
+)
+/*change Password:
+doi mat khau
+method: post
+header:{
+  Authorization: 'Bear <access+token>
+}
+body{
+  old_password: string
+  password: string
+  confirm_password: string
+}
+*/
+userRouter.put(
+  '/change-password', //
+  changPasswordValidator,
+  wraptAsync(changePasswordController) ///----------------------------------------------bug
+)
 
+/*refresh-token
+path: users/refresh-token
+method: pos
+body:{
+  refresh_token: string
+}
+*/
+userRouter.post(
+  '/refresh-token', //
+  refreshTokenValidator,
+  wraptAsync(refreshTokenController)
+)
 export default userRouter

@@ -10,6 +10,7 @@ import { ErrorWithStatus } from '~/models/Errors'
 import { verifyToken } from '~/utils/jwt'
 import { validate } from '~/utils/validation'
 import dotenv from 'dotenv'
+import { REGEX_USERNAME } from '~/constants/regex'
 //middleware la  handler co nhiem vy kiem trs cac du lieu ma nguoi dung gui len thong qua request
 //middleware  giu vai tro kiem tra du lieu du va dung kieu
 const passwordSchema: ParamSchema = {
@@ -375,10 +376,29 @@ export const updateMeValidator = validate(
             max: 50
           },
           errorMessage: USERS_MESSAGES.USERNAME_LENGTH_MUST_BE_LESS_THAN_50 //messages.ts thêm USERNAME_LENGTH_MUST_BE_LESS_THAN_50: 'Username length must be less than 50'
+        },
+        custom: {
+          options: (value: string, { req }) => {
+            if (!REGEX_USERNAME.test(value)) {
+              throw new Error(USERS_MESSAGES.USERNAME_IS_INVALID)
+            }
+            //kh co van de gi thi return true
+            return true
+          }
         }
       },
       avatar: imageSchema,
       cover_photo: imageSchema
+    },
+    ['body']
+  )
+)
+export const changPasswordValidator = validate(
+  checkSchema(
+    {
+      old_password: passwordSchema,
+      password: passwordSchema,
+      confirm_password: comfirmPasswordSchema
     },
     ['body']
   )
