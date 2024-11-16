@@ -4,6 +4,7 @@ import databseService from './services/database.services'
 import { defaultErrorHandler } from './middlewares/error.midlewares'
 import mediaRouter from './routes/medias.routers'
 import { initFolder } from './utils/file'
+import staticRouter from './routes/static.routers'
 
 const app = express()
 const PORT = 3000
@@ -14,6 +15,7 @@ app.use(express.json()) //server dung middleware bien doi cac chuoi json dc gui 
 //app dung router
 app.use('/users', userRouter)
 app.use('/medias', mediaRouter)
+app.use('/static', staticRouter)
 // app.get('/', (req, res) => {
 //   console.log(`HELLO WORLD`)
 //   res.send('Hello')
