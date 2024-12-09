@@ -5,6 +5,9 @@ import { getNameFormidable, handleUploadImage, handleUploadVideo } from '~/utils
 import fs from 'fs'
 import { Media } from '~/models/Other'
 import { MediaType } from '~/constants/enums'
+import { isProduction } from '~/constants/config'
+import dotenv from 'dotenv'
+dotenv.config()
 class MediasService {
   async handleUploadImage(req: Request) {
     const files = await handleUploadImage(req)
@@ -18,7 +21,9 @@ class MediasService {
         //setup duong link
         fs.unlinkSync(file.filepath) //xoa hinh cu
         const url: Media = {
-          url: `http://localhost:3000/static/image/${newFileName}`,
+          url: isProduction
+            ? `${process.env.HOST}/static/image/${newFileName}`
+            : `http://localhost:${process.env.PORT}/static/image/${newFileName}`,
           type: MediaType.Image
         }
         return url
@@ -31,7 +36,9 @@ class MediasService {
     const result = await Promise.all(
       files.map(async (file) => {
         const url: Media = {
-          url: `http://localhost:3000/static/video/${file.newFilename}`,
+          url: isProduction
+            ? `${process.env.HOST}/static/video/${file.newFilename}`
+            : `http://localhost:${process.env.PORT}/static/video/${file.newFilename}`,
           type: MediaType.Video
         }
         return url
